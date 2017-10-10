@@ -45,7 +45,7 @@ class FCN8(nn.Module):
         self.upsample_pool4 = nn.ConvTranspose2d(num_classes,num_classes,kernel_size=4,stride=2,padding=1,bias=False)
         self.upsample_pool3 = nn.ConvTranspose2d(num_classes,num_classes,kernel_size=16,stride=8,padding=4,bias=False)
 
-
+        
     def forward(self, x):
         
         pool_3 = self.features3(x)
@@ -107,25 +107,31 @@ class FCN8(nn.Module):
             
     def tr(self,x,y,bs,n_train_batch,optimizer,criterion,model):
         
-        index = np.random.permutation(len(x))  
+        index = np.random.permutation(len(x))
         model.train()        
         c = []
         
-        for index_train in range(n_train_batch): 
-            
-            x_tr,y_tr = transform(x[index[index_train]][0],y[index[index_train]][0])         
-            x_tr = Variable(x_tr.float(),requires_grad=True) .cuda()                                                                                          
-            y_tr = y_tr.view(-1,x_tr.size(2)*x_tr.size(3))
-            y_tr = Variable(y_tr.long()).cuda()         
+        for index_train in range (n_train_batch):
+                
+            rand_init = np.random.randint(0,len(x),1)[0]
+            batch_x, batch_y = transform(x[rand_init][0], y[rand_init][0])                       
+            for ix in index[index_train*bs:bs*(index_train)+bs]:             
+                x_temp, y_temp  = transform(x[ix][0],y[ix][0])
+                batch_x = torch.cat([batch_x,x_temp])
+                batch_y = torch.cat([batch_y,y_temp])
+                       
+            x_tr = Variable(batch_x.float(),requires_grad=True).cuda()         
+            y_tr = batch_y.view(-1,x_tr.size(2)*x_tr.size(3))
+            y_tr = Variable(y_tr.long()).cuda()      
             optimizer.zero_grad()                
             output = self.forward(x_tr)
-            loss_tr = criterion(output,y_tr[0])
+            loss_tr = criterion(output,y_tr.view(-1))
             loss_tr.backward()
             optimizer.step()
             c.append((loss_tr.data[0]))           
         return c
-    
-    def va(self,x,y,bs,n_valid_batch,model):
+        
+    def va(self,x,y,n_valid_batch,model):
         
         index = np.random.permutation(len(x)) 
         model.eval()
@@ -145,7 +151,7 @@ class FCN8(nn.Module):
             v.append((pp.data[0],IoU_1.data[0],IoU_0.data[0],IoU_m))
         return v
     
-    def te(self,x,y,bs,n_test_batch,model):
+    def te(self,x,y,n_test_batch,model):
         
         index = np.random.permutation(len(x)) 
         model.eval()
@@ -165,4 +171,5 @@ class FCN8(nn.Module):
             IoU_m = (IoU_1.data[0]+IoU_0.data[0]) / 2
             l.append((pp.data[0],IoU_1.data[0],IoU_0.data[0],IoU_m))
         return l
+
     

@@ -10,12 +10,18 @@ class SegNet(nn.Module):
     def __init__(self, num_classes, pretrained=True):
         super(SegNet, self).__init__()
         features = list(models.vgg16_bn().features.children())
+        
+        for f in features:
+            if 'MaxPool' in f.__class__.__name__:
+                f.return_indices=True
 
         self.enc1 = nn.Sequential(*features[0:7])
         self.enc2 = nn.Sequential(*features[7:14])
         self.enc3 = nn.Sequential(*features[14:24])
         self.enc4 = nn.Sequential(*features[24:34])
         self.enc5 = nn.Sequential(*features[40:])
+        
+        
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -67,8 +73,6 @@ class SegNet(nn.Module):
             *([nn.Conv2d(64, 2, kernel_size=3, padding=1)])
         )
 
-       
-
     def forward(self, x):
         enc1, idx1 = self.enc1(x)
         enc2, idx2 = self.enc2(enc1)
@@ -85,13 +89,12 @@ class SegNet(nn.Module):
         dec2_out = self.dec2_out(dec2)
         dec1 = self.dec1(F.max_unpool2d(dec2_out,idx1,kernel_size=2,stride=2))
         dec1_out = self.dec1_out(dec1)
-
+                
         out = dec1_out.permute(1,0,2,3).contiguous()
         out = out.view(2,-1)
         out = out.permute(1,0)
-        
-        return out
 
+        return out
     def accuracy(self,x,y):
 		
         y_pred = torch.max(F.softmax(self.forward(x)),1)[1]
@@ -130,25 +133,31 @@ class SegNet(nn.Module):
             
     def tr(self,x,y,bs,n_train_batch,optimizer,criterion,model):
         
-        index = np.random.permutation(len(x))  
+        index = np.random.permutation(len(x))
         model.train()        
         c = []
         
-        for index_train in range(n_train_batch): 
-            
-            x_tr,y_tr = transform(x[index[index_train]][0],y[index[index_train]][0])         
-            x_tr = Variable(x_tr.float(),requires_grad=True) .cuda()                                                                                          
-            y_tr = y_tr.view(-1,x_tr.size(2)*x_tr.size(3))
-            y_tr = Variable(y_tr.long()).cuda()         
+        for index_train in range (n_train_batch):
+                
+            rand_init = np.random.randint(0,len(x),1)[0]
+            batch_x, batch_y = transform(x[rand_init][0], y[rand_init][0])                       
+            for ix in index[index_train*bs:bs*(index_train)+bs]:             
+                x_temp, y_temp  = transform(x[ix][0],y[ix][0])
+                batch_x = torch.cat([batch_x,x_temp])
+                batch_y = torch.cat([batch_y,y_temp])
+                       
+            x_tr = Variable(batch_x.float(),requires_grad=True).cuda()         
+            y_tr = batch_y.view(-1,x_tr.size(2)*x_tr.size(3))
+            y_tr = Variable(y_tr.long()).cuda()      
             optimizer.zero_grad()                
             output = self.forward(x_tr)
-            loss_tr = criterion(output,y_tr[0])
+            loss_tr = criterion(output,y_tr.view(-1))
             loss_tr.backward()
             optimizer.step()
             c.append((loss_tr.data[0]))           
         return c
-    
-    def va(self,x,y,bs,n_valid_batch,model):
+        
+    def va(self,x,y,n_valid_batch,model):
         
         index = np.random.permutation(len(x)) 
         model.eval()
@@ -168,7 +177,7 @@ class SegNet(nn.Module):
             v.append((pp.data[0],IoU_1.data[0],IoU_0.data[0],IoU_m))
         return v
     
-    def te(self,x,y,bs,n_test_batch,model):
+    def te(self,x,y,n_test_batch,model):
         
         index = np.random.permutation(len(x)) 
         model.eval()
