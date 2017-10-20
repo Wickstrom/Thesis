@@ -1,0 +1,77 @@
+import torch
+import torch.nn as nn
+from torchvision import models
+
+class FCN8(nn.Module):
+    def __init__(self, num_classes):
+        super(FCN8, self).__init__()
+        
+        features = list(models.vgg16_bn().features.children())
+        fcn_16 = torch.load('FCN16_net.pth')
+
+        self.features3 = nn.Sequential(*features[:24])
+        self.features4 = nn.Sequential(*features[24:34])
+        self.features5 = nn.Sequential(*features[34:])
+        
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                m.require_grad = False            
+            if isinstance(m,nn.BatchNorm2d):
+                m.require_grad = False
+     
+        self.fc = nn.Sequential(
+                nn.Conv2d(512,4096,kernel_size=7,padding=3),
+                nn.BatchNorm2d(4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Conv2d(4096,4096,kernel_size=1),
+                nn.BatchNorm2d(4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                )
+        self.fc[0].weight = fcn_16.fc[0].weight
+        self.fc[0].bias = fcn_16.fc[0].bias
+        self.fc[1].weight = fcn_16.fc[1].weight
+        self.fc[1].bias = fcn_16.fc[1].bias
+        self.fc[4].weight = fcn_16.fc[4].weight
+        self.fc[4].bias = fcn_16.fc[4].bias
+        self.fc[5].weight = fcn_16.fc[5].weight
+        self.fc[6].bias = fcn_16.fc[5].bias
+
+        self.score_pool3 = nn.Conv2d(256, num_classes, kernel_size=1)
+        nn.init.kaiming_normal(self.score_pool3.weight)
+        nn.init.constant(self.score_pool3.bias,1)        
+        self.upsample_pool3 = nn.ConvTranspose2d(num_classes,num_classes,kernel_size=16,stride=8,padding=4,bias=False)
+        
+        self.score_pool4 = nn.Conv2d(512,num_classes,kernel_size=1)   
+        self.score_pool4.weight = fcn_16._modules['score_pool4'].weight 
+        self.score_pool4.bias = fcn_16._modules['score_pool4'].bias 
+        self.upsample_pool4 = nn.ConvTranspose2d(num_classes,num_classes,kernel_size=4,stride=2,padding=1,bias=False)
+                 
+        self.score_pool5 = nn.Conv2d(4096,num_classes,kernel_size=1)   
+        self.score_pool5.weight = fcn_16._modules['score_pool5'].weight 
+        self.score_pool5.bias = fcn_16._modules['score_pool5'].bias 
+        self.upsample_pool5 = nn.ConvTranspose2d(num_classes,num_classes,kernel_size=4,stride=2,padding=1,bias=False)
+ 
+    def forward(self, x):
+        
+        pool_3 = self.features3(x)
+        pool_4 = self.features4(pool_3)
+        pool_5 = self.features5(pool_4)
+        fc = self.fc(pool_5) 
+        
+        score_pool3 = self.score_pool3(pool_3)
+        score_pool4 = self.score_pool4(pool_4)
+        score_pool5 = self.score_pool5(fc)
+        
+        out = self.upsample_pool5(score_pool5)
+        out += score_pool4
+        out = self.upsample_pool4(out)
+        out += score_pool3
+        out = self.upsample_pool3(out)
+        
+        out = out.permute(1,0,2,3).contiguous()
+        out = out.view(2,-1)
+        out = out.permute(1,0)
+
+        return out
