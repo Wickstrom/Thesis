@@ -2,6 +2,19 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
+############################################################################################################
+# Implementation of Fully Convolutional Network - 16 from https://arxiv.org/abs/1411.4038.                 #
+# Encoder is initialized from VGG16(https://arxiv.org/abs/1409.1556) with                                  #
+# Batch Normalization(https://arxiv.org/abs/1502.03167) included.                                          #
+# Note that this implementation assumes that input images have the property that                           #
+# modulo(Input H/W,5) = 0. This is to handle size information during the upsampling. The                   #
+# easiest way to ensure this is to either pad images and crop when calculating loss                        #
+# or crop incoming images to size (224,224) for example.                                                   #
+# Not the smoothest method to handle shape but i included this work as a part of data pre-processing.      #
+# Also note that this implementation assumes you start by training the FCN-32 and use this network to      #
+# initialize this model.                                                                                   #
+############################################################################################################
+
 class FCN16(nn.Module):
     def __init__(self, num_classes, pretrained=True):
         super(FCN16, self).__init__()
