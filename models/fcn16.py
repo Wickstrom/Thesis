@@ -19,13 +19,13 @@ class FCN16(nn.Module):
     def __init__(self, num_classes, pretrained=True):
         super(FCN16, self).__init__()
         
-        features = list(models.vgg16_bn().features.children())
-        fcn_32 = torch.load('FCN32_net.pth')
+        features = list(models.vgg16_bn().features.children())               # Initialize encoder from VGG16 with BN.
+        fcn_32 = torch.load('FCN32_net.pth')                                 # Load trained FCN-32 model.
 
-        self.features4 = nn.Sequential(*features[0:34])
-        self.features5 = nn.Sequential(*features[34:])
+        self.features4 = nn.Sequential(*features[0:34])                      # Split encoder into two parts to enable
+        self.features5 = nn.Sequential(*features[34:])                       # skip connecntions.
         
-        for m in self.modules():
+        for m in self.modules():                                             # 
             if isinstance(m, nn.Conv2d):
                 m.require_grad = False
             
