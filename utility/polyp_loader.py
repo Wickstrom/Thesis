@@ -8,7 +8,8 @@ from torchsample.transforms import (RandomRotate,
                                     SpecialCrop
                                     )
 #######################################################################################
-# This fucntion transforms the training data. User must input size to crop image,     #
+# This fucntion loads a Torch tensor of size (C,H,W) and                              #
+# transforms the training data. User must input size to crop image,                   #
 # range of rotation, shearing and zoom. The function is not particularly efficient,   #
 # but this way ensure that the input and ground truth are transformed in the same way.#
 # Note that i use torchsample(https://github.com/ncullen93/torchsample)               #
