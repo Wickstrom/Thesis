@@ -4,8 +4,13 @@ import torch.nn.functional as F
 from polyp_loader import transform
 from torch.autograd import Variable
 
+#####################################################################################################
+# This file contains a collection of small function for my networks. Note that all functions        #
+# assumes that the y input(label) is of shape (Number of Samples x Number of Classes).              #
+#####################################################################################################
+
     
-def accuracy(x,y,model):
+def accuracy(x,y,model):                                              # Compute mean per-pixel accuracy.
     
     y_pred = torch.max(F.softmax(model(x)),1)[1]
     accuracy = torch.mean(torch.eq(y,y_pred).float())
@@ -15,7 +20,7 @@ def accuracy(x,y,model):
     
 def IoU(x,y,a,model):
         
-    y_pred = torch.max(F.softmax(model(x)),1)[1]
+    y_pred = torch.max(F.softmax(model(x)),1)[1]                      # Compute IoU-score for class a.
     TP = torch.sum(((y == a).float() * (y == y_pred).float()).float()) 
     FP = torch.sum(((y != a).float() * (y_pred == a).float()).float()) 
     FN = torch.sum(((y == a).float() * (y != y_pred).float()).float()) 
@@ -24,15 +29,15 @@ def IoU(x,y,a,model):
 
 def F1(x,y,a,model):
         
-    y_pred = torch.max(F.softmax(model(x)),1)[1]
+    y_pred = torch.max(F.softmax(model(x)),1)[1]                      # Compute F1-score for class a.
     TP = torch.sum(((y == a).float() * (y == y_pred).float()).float()) 
     FP = torch.sum(((y != a).float() * (y_pred == a).float()).float()) 
     FN = torch.sum(((y == a).float() * (y != y_pred).float()).float()) 
         
     return 2 * TP.float() / (2*TP + FP + FN).float()
 
-def MFB(y):
-        
+def MFB(y):                                                           # Median frequency balancing (https://arxiv.org/abs/1411.4734)
+                                                                      # for two classes.                                                                        
     f0 = torch.sum(torch.eq(y,0).float())
     f1 = torch.sum(torch.eq(y,1).float())
     mean_freq = (f0+f1) / 2
@@ -41,6 +46,9 @@ def MFB(y):
     weights = torch.cat([w0,w1])
         
     return weights
+
+####################################################################################
+# Training function for all networks. Detailed explentation coming soon.           #
             
 def train(x,y,bs,n_train_batch,optimizer,criterion,model,
            crop,rot,shear,zoom,t):
