@@ -6,7 +6,7 @@ from torch.autograd import Variable
 
 #####################################################################################################
 # This file contains a collection of small function for my networks. Note that all functions        #
-# assumes that the y input(label) is of shape (Number of Samples x Number of Classes).              #
+# assumes that the y input(label) is of shape (Number of Samples , umber of Classes).              #
 #####################################################################################################
 
     
