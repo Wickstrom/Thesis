@@ -41,7 +41,7 @@ class FCN32(nn.Module):
 
         self.score_pool5 = nn.Conv2d(4096,num_classes,kernel_size=1)# Upsample input by a factor of 5 using transposed convolution,
         nn.init.kaiming_normal(self.score_pool5.weight)             # initialize weights according to https://arxiv.org/abs/1502.01852,               
-        nn.init.constant(self.score_pool5.bias,1)                   # and get output of size (Number of classes(c)XNumber of samples(N).                                         
+        nn.init.constant(self.score_pool5.bias,1)                   # and get output of size (Number of classes(c), Number of samples(N).                                         
         self.upsample_pool5 = nn.ConvTranspose2d(num_classes,num_classes,kernel_size=64,stride=32,padding=16,bias=False)
   
     def forward(self, x):
@@ -49,11 +49,11 @@ class FCN32(nn.Module):
         pool_5 = self.features(x)                                   # Run through encoder.
         fc = self.fc(pool_5)                                        # Altered classifier part.
          
-        score_pool5 = self.score_pool5(fc)                          # Get output of size (c x N).                               
+        score_pool5 = self.score_pool5(fc)                          # Get output of size (c , N).                               
         out = self.upsample_pool5(score_pool5)                      # Upsampling.
         
         out = out.permute(1,0,2,3).contiguous()                     # Modify shape for softmax, such that the final output of the
-        out = out.view(2,-1)                                        # model is (N x c).
+        out = out.view(2,-1)                                        # model is (N , c).
         out = out.permute(1,0)
 
 return out
