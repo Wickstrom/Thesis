@@ -1,16 +1,11 @@
 import torch
-import numyp as np
+import numpy as np
 import torch.nn.functional as F
 from polyp_loader import transform
 from torch.autograd import Variable
 
-#####################################################################################################
-# This file contains a collection of small function for my networks. Note that all functions        #
-# assumes that the y input(label) is of shape (Number of Samples , umber of Classes).              #
-#####################################################################################################
-
     
-def accuracy(x,y,model):                                              # Compute mean per-pixel accuracy.
+def accuracy(x,y,model):
     
     y_pred = torch.max(F.softmax(model(x)),1)[1]
     accuracy = torch.mean(torch.eq(y,y_pred).float())
@@ -20,7 +15,7 @@ def accuracy(x,y,model):                                              # Compute 
     
 def IoU(x,y,a,model):
         
-    y_pred = torch.max(F.softmax(model(x)),1)[1]                      # Compute IoU-score for class a.
+    y_pred = torch.max(F.softmax(model(x)),1)[1]
     TP = torch.sum(((y == a).float() * (y == y_pred).float()).float()) 
     FP = torch.sum(((y != a).float() * (y_pred == a).float()).float()) 
     FN = torch.sum(((y == a).float() * (y != y_pred).float()).float()) 
@@ -29,15 +24,15 @@ def IoU(x,y,a,model):
 
 def F1(x,y,a,model):
         
-    y_pred = torch.max(F.softmax(model(x)),1)[1]                      # Compute F1-score for class a.
+    y_pred = torch.max(F.softmax(model(x)),1)[1]
     TP = torch.sum(((y == a).float() * (y == y_pred).float()).float()) 
     FP = torch.sum(((y != a).float() * (y_pred == a).float()).float()) 
     FN = torch.sum(((y == a).float() * (y != y_pred).float()).float()) 
         
     return 2 * TP.float() / (2*TP + FP + FN).float()
 
-def MFB(y):                                                           # Median frequency balancing (https://arxiv.org/abs/1411.4734)
-                                                                      # for two classes.                                                                        
+def MFB(y):
+        
     f0 = torch.sum(torch.eq(y,0).float())
     f1 = torch.sum(torch.eq(y,1).float())
     mean_freq = (f0+f1) / 2
@@ -46,12 +41,9 @@ def MFB(y):                                                           # Median f
     weights = torch.cat([w0,w1])
         
     return weights
-
-####################################################################################
-# Training function for all networks. Detailed explentation coming soon.           #
             
 def train(x,y,bs,n_train_batch,optimizer,criterion,model,
-           crop,rot,shear,zoom,t):
+           crop,rot,shear,zoom,t,cuda):
         
     index = np.random.permutation(len(x))
     model.train()        
@@ -67,10 +59,16 @@ def train(x,y,bs,n_train_batch,optimizer,criterion,model,
                                          crop,rot,shear,zoom,t)
             batch_x = torch.cat([batch_x,x_temp])
             batch_y = torch.cat([batch_y,y_temp])
-                       
-        x_tr = Variable(batch_x.float(),requires_grad=True).cuda()         
+        
+        if cuda == True:
+            x_tr = Variable(batch_x.float(),requires_grad=True).cuda()
+        else:
+            x_tr = Variable(batch_x.float(),requires_grad=True)            
         y_tr = batch_y.view(-1,x_tr.size(2)*x_tr.size(3))
-        y_tr = Variable(y_tr.long()).cuda()      
+        if cuda == True:
+            y_tr = Variable(y_tr.long()).cuda() 
+        else:
+            y_tr = Variable(y_tr.long())              
         optimizer.zero_grad()                
         output = model(x_tr)
         loss_tr = criterion(output,y_tr.view(-1))
@@ -79,43 +77,60 @@ def train(x,y,bs,n_train_batch,optimizer,criterion,model,
         c.append((loss_tr.data[0]))           
     return c
         
-def valid(x,y,n_valid_batch,model):
+def valid(x,y,n_valid_batch,num_c,model,cuda):
         
     index = np.random.permutation(len(x)) 
     model.eval()
-    v = []
+
+    val= []
     for index_test in range(n_valid_batch): 
-            
+        v = []            
         x_va = x[index[index_test]]
-        y_va = y[index[index_test]]    
-        x_va = Variable(x_va.float()).cuda()     
+        y_va = y[index[index_test]]        
+        if cuda == True:
+            x_va = Variable(x_va.float()).cuda() 
+        else:
+            x_va = Variable(x_va.float()) 
                                                                       
         y_va = y_va.view(-1,x_va.size(2)*x_va.size(3))
-        y_va = Variable(y_va.long()).cuda()
-        pp = accuracy(x_va,y_va[0])
-        IoU_1 = IoU(x_va,y_va[0],1)
-        IoU_0 = IoU(x_va,y_va[0],0)
-        IoU_m = (IoU_1.data[0]+IoU_0.data[0]) / 2
-        v.append((pp.data[0],IoU_1.data[0],IoU_0.data[0],IoU_m))
-    return v
+        if cuda == True:
+            y_va = Variable(y_va.long()).cuda()
+        else:
+            y_va = Variable(y_va.long())
+
+        v.append(accuracy(x_va,y_va[0],model).data[0])
+        for i in range(num_c):
+            v.append(IoU(x_va,y_va[0],i,model).data[0])
+
+        v.append(np.mean(v[1:]))
+        val.append(v)
+    return val
     
-def test(x,y,n_test_batch,model):
+def test(x,y,n_test_batch,num_c,model,cuda):
         
     index = np.random.permutation(len(x)) 
     model.eval()
-    l = []
+    loss = []
     for index_test in range(n_test_batch): 
-            
+        l = []            
         x_te = x[index[index_test]]
-        y_te = y[index[index_test]]       
-                       
-        x_te = Variable(x_te.float()).cuda()     
-                                                                      
+        y_te = y[index[index_test]]  
+        if cuda == True:
+            x_te = Variable(x_te.float()).cuda() 
+        else:
+            x_te = Variable(x_te.float()) 
+                                                                          
         y_te = y_te.view(-1,x_te.size(2)*x_te.size(3))
-        y_te = Variable(y_te.long()).cuda()
-        pp = accuracy(x_te,y_te[0])
-        IoU_1 = IoU(x_te,y_te[0],1)
-        IoU_0 = IoU(x_te,y_te[0],0)
-        IoU_m = (IoU_1.data[0]+IoU_0.data[0]) / 2
-        l.append((pp.data[0],IoU_1.data[0],IoU_0.data[0],IoU_m))
-    return l
+        if cuda == True:
+            y_te = Variable(y_te.long()).cuda()
+        else:
+            y_te = Variable(y_te.long())
+        l.append(accuracy(x_te,y_te[0],model).data[0])
+        for i in range(num_c):
+            l.append(IoU(x_te,y_te[0],i,model).data[0])
+
+        l.append(np.mean(l[1:]))
+        loss.append(l)
+    return loss
+
+    
