@@ -88,15 +88,15 @@ def valid(x,y,n_valid_batch,num_c,model,cuda):
         x_va = x[index[index_test]]
         y_va = y[index[index_test]]        
         if cuda == True:
-            x_va = Variable(x_va.float()).cuda() 
+            x_va = Variable(x_va.float(),volatile=True).cuda() 
         else:
-            x_va = Variable(x_va.float()) 
+            x_va = Variable(x_va.float(),volatile=True) 
                                                                       
         y_va = y_va.view(-1,x_va.size(2)*x_va.size(3))
         if cuda == True:
-            y_va = Variable(y_va.long()).cuda()
+            y_va = Variable(y_va.long(),volatile=True).cuda()
         else:
-            y_va = Variable(y_va.long())
+            y_va = Variable(y_va.long(),volatile=True)
 
         v.append(accuracy(x_va,y_va[0],model).data[0])
         for i in range(num_c):
@@ -116,15 +116,15 @@ def test(x,y,n_test_batch,num_c,model,cuda):
         x_te = x[index[index_test]]
         y_te = y[index[index_test]]  
         if cuda == True:
-            x_te = Variable(x_te.float()).cuda() 
+            x_te = Variable(x_te.float(),volatile=True).cuda() 
         else:
-            x_te = Variable(x_te.float()) 
+            x_te = Variable(x_te.float(),volatile=True) 
                                                                           
         y_te = y_te.view(-1,x_te.size(2)*x_te.size(3))
         if cuda == True:
-            y_te = Variable(y_te.long()).cuda()
+            y_te = Variable(y_te.long(),volatile=True).cuda()
         else:
-            y_te = Variable(y_te.long())
+            y_te = Variable(y_te.long(),volatile=True)
         l.append(accuracy(x_te,y_te[0],model).data[0])
         for i in range(num_c):
             l.append(IoU(x_te,y_te[0],i,model).data[0])
