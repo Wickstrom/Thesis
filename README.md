@@ -1,3 +1,15 @@
+# Project Title
+
+One Paragraph of project description goes here
+
+## Getting Started
 
 
-Networks implemented: Fully Convolutional Networks(FCNs), Segnet, U-net and Fully Convolutional Densenets.
+
+### Prerequisites
+
+What things you need to install the software and how to install them
+
+```
+import torch.nn as nn
+```
