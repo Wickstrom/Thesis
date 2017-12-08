@@ -17,7 +17,7 @@ class FCN8(nn.Module):
     def __init__(self, num_classes):
         super(FCN8, self).__init__()
 
-        # Note that the parameters in the encoder is frozen which reduced the
+        # Note that the parameters in the encoder is frozen which reduces the
         # the amount of parameters to optimize.
         # Also, the first conv layer which replace the the first
         # fully connencted layer has padding = 3 to avoid the size of the
