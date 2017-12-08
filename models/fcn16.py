@@ -14,7 +14,7 @@ from torchvision import models
 
 
 class FCN16(nn.Module):
-    def __init__(self, num_classes, pretrained=True):
+    def __init__(self, num_classes):
         super(FCN16, self).__init__()
 
         # Note that the parameters in the encoder is frozen which reduced the
