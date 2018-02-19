@@ -4,15 +4,15 @@ import torch.nn.functional as F
 from polyp_loader import transform
 from torch.autograd import Variable
 
-    
-def accuracy(x,y,model):
-    
-    y_pred = torch.max(F.softmax(model(x)),1)[1]
-    accuracy = torch.mean(torch.eq(y,y_pred).float())
-        
+
+def accuracy(x, y, model):
+
+    y_pred = torch.max(F.softmax(model(x)), 1)[1]
+    accuracy = torch.mean(torch.eq(y, y_pred).float())
+
     return(accuracy)
-    
-    
+
+
 def IoU(x,y,a,model):
         
     y_pred = torch.max(F.softmax(model(x)),1)[1]

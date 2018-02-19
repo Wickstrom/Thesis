@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 import torch.nn.functional as F
 
 #############################################################################
@@ -107,8 +108,11 @@ class Unet(nn.Module):
                nn.Conv2d(64, 64, kernel_size=3, padding=1),
                nn.BatchNorm2d(64),
                activation,
-               nn.Conv2d(64, num_classes, kernel_size=3, padding=1), ])
+               nn.Conv2d(64, num_classes, kernel_size=1, padding=0), ])
         )
+
+        for m in self.modules():
+            self.weight_init(m)
 
     def forward(self, x):                           # Forward pass for network.
 
@@ -129,3 +133,11 @@ class Unet(nn.Module):
         out = out.permute(1, 0)
 
         return out
+
+    def weight_init(self, m):
+        if isinstance(m, nn.Conv2d):
+            init.kaiming_normal(m.weight.data)
+            init.constant(m.bias.data, 1)
+        if isinstance(m, nn.BatchNorm2d):
+            init.constant(m.weight.data, 1)
+            init.constant(m.bias.data, 0)
