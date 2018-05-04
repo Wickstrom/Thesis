@@ -3,39 +3,39 @@ import pandas
 import datetime
 import numpy as np
 import torch.nn as nn
-from segnet import SegNet
+# from Unet import Unet
+from fcn8 import FCN8
+# from segnet import SegNet
+
 from utils import train, valid, test
 
-f = 'Segnet_net.pth'
-g = 'Segnet_graph.npz'
+f =  'FCN8_net.pth' #'Segnet_net.pth' 'Unet_net.pth' 
+g = 'FCN8_graph.npz' # 'Segnet_graph.npz''Unet_graph.npz'   
 time_start = datetime.datetime.now()
 data = torch.load('polyp_data.pth')
 
 batch_size = 10
 n_tr_batch = len(data[0]) // batch_size
-n_va_batch = 183
-n_te_batch = 182
+n_va_batch, n_te_batch = 183, 182
 
-n_epochs = 500
-n_c = 2
-cuda = True
+n_epochs, n_c, cuda = 500, 2, True
 
 if cuda:
-    model = SegNet(n_c, nn.ReLU()).cuda()
+    model = FCN8(n_c).cuda()
+    # model = SegNet(n_c, nn.ReLU()).cuda()
+    # model = Unet(n_c, nn.ReLU()).cuda()
 else:
-    model = SegNet(n_c, nn.ReLU())
+    model = FCN8(n_c)
+    # model = SegNet(n_c, nn.ReLU())
+    # model = Unet(n_c, nn.ReLU())
 
 optimizer = torch.optim.Adam(model.parameters())
 criterion = nn.CrossEntropyLoss()
 
-cost = []
-validation = []
-score = []
+cost, validation, score = [], [], []
 
-patience = 0
-best_valid = -100
-best_test = -100
-tolerance = 50
+patience, tolerance = 0, 50
+best_valid, best_test = -100, -100
 start_transforming = 100
 t_f = [(224, 224), 60, 30, (0.7, 1.4), False]
 
