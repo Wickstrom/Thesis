@@ -1,6 +1,6 @@
-# Project Title
+# Code utilized in Kristoffer Wickstrom's master thesis
 
-One Paragraph of project description goes here
+This repository containts the for the master thesis entitled "Uncertainty Modelling and Interpretability in Convolutional Neural Networks for Polyp Segmentation"
 
 ## Getting Started
 
