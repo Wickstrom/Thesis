@@ -2,9 +2,9 @@
 
 This repository containts the for the master thesis entitled "Uncertainty Modelling and Interpretability in Convolutional Neural Networks for Polyp Segmentation"
 
-## Getting Started
+## GB Models
 
-
+Contain the fully trained models with modified backward pass for Guided Backpropagation
 
 ### Prerequisites
 
