@@ -6,10 +6,16 @@ This repository containts the for the master thesis entitled "Uncertainty Modell
 
 Contain the fully trained models with modified backward pass for Guided Backpropagation
 
-### Prerequisites
+### Misc
 
-What things you need to install the software and how to install them
+Contain the scripts for creating uncertainty maps, interpretability maps and gradient uncertainty maps. Also includes scrips for mutual information estimation of DNNs
 
-```
-import torch.nn as nn
-```
+#### Models
+
+Contain the code for FCN-32, FCN-16, FCN-8, SegNet and U-Net
+
+##### Utility 
+
+Assortment of functions like data loader, training/validation/test and data augmentation.
+
+
