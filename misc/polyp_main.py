@@ -9,8 +9,8 @@ from fcn8 import FCN8
 
 from utils import train, valid, test
 
-f =  'FCN8_net.pth' #'Segnet_net.pth' 'Unet_net.pth' 
-g = 'FCN8_graph.npz' # 'Segnet_graph.npz''Unet_graph.npz'   
+f =   'Unet_net_ny.pth' # 'FCN8_net.pth' 'Segnet_net.pth'
+g = 'Unet_graph_ny.npz' # 'FCN8_graph.npz' # 'Segnet_graph.npz' 
 time_start = datetime.datetime.now()
 data = torch.load('polyp_data.pth')
 
@@ -37,7 +37,7 @@ cost, validation, score = [], [], []
 patience, tolerance = 0, 50
 best_valid, best_test = -100, -100
 start_transforming = 100
-t_f = [(224, 224), 60, 30, (0.7, 1.4), False]
+t_f = [(224, 224), 60, 50, (0.7, 1.4), False]
 
 print('Training started at:')
 print(time_start)
