@@ -3,8 +3,8 @@ import pandas
 import datetime
 import numpy as np
 import torch.nn as nn
-# from Unet import Unet
-from fcn8 import FCN8
+from Unet import Unet
+# from fcn8 import FCN8
 # from segnet import SegNet
 
 from utils import train, valid, test
